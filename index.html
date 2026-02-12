@@ -17,23 +17,23 @@
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            background: linear-gradient(to bottom, #4ec0ca 0%, #1a1a2e 100%);
+            background: linear-gradient(to bottom, #0f0f23 0%, #000000 100%);
             font-family: 'Arial', sans-serif;
             overflow: hidden;
         }
         
         #gameCanvas {
-            border: 4px solid #fff;
+            border: 4px solid #00d4ff;
             border-radius: 8px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.5), 0 10px 30px rgba(0,0,0,0.8);
             cursor: pointer;
         }
         
         .info {
             margin-top: 20px;
-            color: #fff;
+            color: #00d4ff;
             text-align: center;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            text-shadow: 0 0 10px rgba(0, 212, 255, 0.8);
         }
         
         .info h1 {
@@ -67,13 +67,21 @@
 <body>
     <canvas id="gameCanvas" width="400" height="600"></canvas>
     <div class="info">
-        <h1>🦇 Flappy Fred 🦇</h1>
+        <h1>⚡ Flappy Fred ⚡</h1>
         <p>Click or Space to flap • Don't hit the pipes!</p>
     </div>
     
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
+        
+        // Load avatar image
+        const avatarImg = new Image();
+        avatarImg.src = 'avatar.jpg';
+        let imageLoaded = false;
+        avatarImg.onload = () => {
+            imageLoaded = true;
+        };
         
         // Game state
         let gameRunning = false;
@@ -85,7 +93,7 @@
         const bird = {
             x: 80,
             y: canvas.height / 2,
-            radius: 20,
+            radius: 25,
             velocity: 0,
             gravity: 0.5,
             jump: -8,
@@ -99,96 +107,123 @@
         const pipeSpeed = 2.5;
         let frameCount = 0;
         
-        // Draw bird (circular with bat emoji)
+        // Draw bird (circular avatar)
         function drawBird() {
+            if (!imageLoaded) return;
+            
             ctx.save();
             ctx.translate(bird.x, bird.y);
             ctx.rotate(bird.rotation);
             
-            // Draw circle background
-            ctx.fillStyle = '#1a1a2e';
+            // Clip to circle
             ctx.beginPath();
             ctx.arc(0, 0, bird.radius, 0, Math.PI * 2);
-            ctx.fill();
+            ctx.clip();
             
-            // Draw bat emoji
-            ctx.font = `${bird.radius * 1.5}px Arial`;
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText('🦇', 0, 0);
+            // Draw avatar image scaled to fit circle
+            const size = bird.radius * 2;
+            ctx.drawImage(avatarImg, -bird.radius, -bird.radius, size, size);
             
+            ctx.restore();
+            
+            // Draw glowing circle border
+            ctx.save();
+            ctx.translate(bird.x, bird.y);
+            ctx.strokeStyle = '#00d4ff';
+            ctx.lineWidth = 3;
+            ctx.shadowColor = '#00d4ff';
+            ctx.shadowBlur = 10;
+            ctx.beginPath();
+            ctx.arc(0, 0, bird.radius, 0, Math.PI * 2);
+            ctx.stroke();
             ctx.restore();
         }
         
-        // Draw pipes
+        // Draw pipes (dark neon theme)
         function drawPipes() {
             pipes.forEach(pipe => {
+                // Gradient for pipes
+                const gradient = ctx.createLinearGradient(pipe.x, 0, pipe.x + pipeWidth, 0);
+                gradient.addColorStop(0, '#1a1a2e');
+                gradient.addColorStop(0.5, '#16213e');
+                gradient.addColorStop(1, '#0f3460');
+                
                 // Top pipe
-                ctx.fillStyle = '#2ecc71';
+                ctx.fillStyle = gradient;
                 ctx.fillRect(pipe.x, 0, pipeWidth, pipe.top);
-                ctx.strokeStyle = '#27ae60';
-                ctx.lineWidth = 3;
+                ctx.strokeStyle = '#00d4ff';
+                ctx.lineWidth = 2;
+                ctx.shadowColor = '#00d4ff';
+                ctx.shadowBlur = 5;
                 ctx.strokeRect(pipe.x, 0, pipeWidth, pipe.top);
                 
                 // Bottom pipe
                 ctx.fillRect(pipe.x, pipe.bottom, pipeWidth, canvas.height - pipe.bottom);
                 ctx.strokeRect(pipe.x, pipe.bottom, pipeWidth, canvas.height - pipe.bottom);
+                
+                // Reset shadow
+                ctx.shadowBlur = 0;
             });
         }
         
         // Draw score
         function drawScore() {
-            ctx.fillStyle = '#fff';
+            ctx.fillStyle = '#00d4ff';
             ctx.font = 'bold 32px Arial';
             ctx.textAlign = 'center';
-            ctx.strokeStyle = '#000';
-            ctx.lineWidth = 3;
-            ctx.strokeText(score, canvas.width / 2, 50);
+            ctx.shadowColor = '#00d4ff';
+            ctx.shadowBlur = 10;
             ctx.fillText(score, canvas.width / 2, 50);
             
             // High score
             ctx.font = '16px Arial';
             ctx.fillStyle = '#ffd700';
-            ctx.strokeStyle = '#000';
-            ctx.lineWidth = 2;
-            ctx.strokeText(`Best: ${highScore}`, canvas.width / 2, 80);
+            ctx.shadowColor = '#ffd700';
+            ctx.shadowBlur = 8;
             ctx.fillText(`Best: ${highScore}`, canvas.width / 2, 80);
+            
+            ctx.shadowBlur = 0;
         }
         
         // Draw start screen
         function drawStartScreen() {
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             
-            ctx.fillStyle = '#fff';
+            ctx.fillStyle = '#00d4ff';
             ctx.font = 'bold 32px Arial';
             ctx.textAlign = 'center';
+            ctx.shadowColor = '#00d4ff';
+            ctx.shadowBlur = 15;
             ctx.fillText('Click to Start!', canvas.width / 2, canvas.height / 2);
             
             ctx.font = '20px Arial';
             ctx.fillText('Tap anywhere to flap', canvas.width / 2, canvas.height / 2 + 40);
+            ctx.shadowBlur = 0;
         }
         
         // Draw game over screen
         function drawGameOver() {
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             
-            ctx.fillStyle = '#ff4444';
+            ctx.fillStyle = '#ff0066';
             ctx.font = 'bold 48px Arial';
             ctx.textAlign = 'center';
-            ctx.strokeStyle = '#000';
-            ctx.lineWidth = 4;
-            ctx.strokeText('GAME OVER', canvas.width / 2, canvas.height / 2 - 40);
+            ctx.shadowColor = '#ff0066';
+            ctx.shadowBlur = 20;
             ctx.fillText('GAME OVER', canvas.width / 2, canvas.height / 2 - 40);
             
-            ctx.fillStyle = '#fff';
+            ctx.fillStyle = '#00d4ff';
             ctx.font = '24px Arial';
+            ctx.shadowColor = '#00d4ff';
+            ctx.shadowBlur = 10;
             ctx.fillText(`Score: ${score}`, canvas.width / 2, canvas.height / 2 + 10);
             ctx.fillText(`Best: ${highScore}`, canvas.width / 2, canvas.height / 2 + 40);
             
             ctx.font = '20px Arial';
             ctx.fillText('Click to Restart', canvas.width / 2, canvas.height / 2 + 80);
+            ctx.shadowBlur = 0;
         }
         
         // Update game state
@@ -247,9 +282,20 @@
         
         // Render
         function render() {
-            // Clear canvas
-            ctx.fillStyle = '#4ec0ca';
+            // Dark gradient background
+            const bgGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            bgGradient.addColorStop(0, '#0f0f23');
+            bgGradient.addColorStop(1, '#000000');
+            ctx.fillStyle = bgGradient;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw stars/particles
+            for (let i = 0; i < 50; i++) {
+                const x = (frameCount * 0.2 + i * 50) % canvas.width;
+                const y = (i * 37) % canvas.height;
+                ctx.fillStyle = `rgba(0, 212, 255, ${0.1 + Math.random() * 0.3})`;
+                ctx.fillRect(x, y, 2, 2);
+            }
             
             // Draw game elements
             drawPipes();
